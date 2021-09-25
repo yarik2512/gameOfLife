@@ -64,8 +64,18 @@ void makeStep (array gameArr, int n, int m)
     for (int i = 0; i < gameArr.size; i++)
     {
         int count = neighbors.arr[i];
-        if (count == 3) gameArr.arr[i] = 1;
-        else if (count < 2 || count > 3) gameArr.arr[i] = 0;
+        if (count == 3)
+        {
+            if (gameArr.arr[i] == 1) continue;
+            gameArr.arr[i] = 1;
+            changePixel(i%n, i/n, n, m, txGetExtentX(), txGetExtentY(), 1);
+        }
+        else if (count < 2 || count > 3)
+        {
+            if (gameArr.arr[i] == 0) continue;
+            gameArr.arr[i] = 0;
+            changePixel(i%n, i/n, n, m, txGetExtentX(), txGetExtentY(), 0);
+        }
     }
 }
 
@@ -73,13 +83,12 @@ void play (array gameArr, int n, int m)
 {
     txSleep(100);
     makeStep(gameArr, n, m);
-    render(gameArr, n, m);
 }
 
 int main ()
 {
     srand(time(0));
-    int width = 1000, height = 500, cols = 100, rows = 50;
+    int width = 1000, height = 500, cols = 250, rows = 125;
     txCreateWindow(width, height);
 
     drawTable(cols, rows, width, height);
