@@ -1,4 +1,6 @@
 #include "TXLib.h"
+#include <cmath>
+#include "WinUser.h"
 
 struct array
 {
@@ -6,12 +8,28 @@ struct array
     int size;
 };
 
+array initArray (int n);
+bool keyPress (int vKey);
+void drawTable (int n, int m, int w, int h);
+void changePixel (int x, int y, int n, int m, int w, int h, int c);
+void render (array gameArr, int n, int m);
+int neighborsCount (array gameArr, int i, int n, int m);
+void makeStep (array gameArr, int n, int m);
+void play (array gameArr, int n, int m);
+int getMouse (int n, int m, int w, int h);
+void edit (array gameArr, int n, int m);
+
 array initArray (int n)
 {
     array a;
     a.arr = (int*)malloc(n*sizeof(int));
     a.size = n;
     return a;
+}
+
+bool keyPress (int vKey)
+{
+    return GetAsyncKeyState(vKey) & 0x8000;
 }
 
 void drawTable (int n, int m, int w, int h)
@@ -85,20 +103,58 @@ void play (array gameArr, int n, int m)
     makeStep(gameArr, n, m);
 }
 
+int getMouse (int n, int m, int w, int h)
+{
+    int x = txMouseX(), y = txMouseY();
+    return x*n/w + y*m/h * n;
+}
+
+void edit (array gameArr, int n, int m)
+{
+    int i , mode = (keyPress(VK_LBUTTON) ? 1 : 0);
+    while ((mode && keyPress(VK_LBUTTON)) || (!mode && keyPress(VK_RBUTTON)))
+    {
+        i = getMouse(n, m, txGetExtentX(), txGetExtentY());
+        gameArr.arr[i] = mode;
+        changePixel(i%n, i/n, n, m, txGetExtentX(), txGetExtentY(), gameArr.arr[i]);
+    }
+    return;
+}
+
 int main ()
 {
-    srand(time(0));
-    int width = 1000, height = 500, cols = 250, rows = 125;
+    int width = 1000, height = 500, cols = 100, rows = 50;
     txCreateWindow(width, height);
 
     drawTable(cols, rows, width, height);
 
     array gameArr = initArray(cols*rows);
     for(int i = 0; i < gameArr.size; i++) gameArr.arr[i] = 0;
-    for (int i = 0; i < gameArr.size; i++) gameArr.arr[i] = (rand()%2 == 0);
     render(gameArr, cols, rows);
-    txSleep(5000);
-    while (true) play(gameArr, cols, rows);
+    while (!keyPress(VK_RETURN))
+    {
+        if (keyPress(VK_LBUTTON) || keyPress(VK_RBUTTON)) edit(gameArr, cols, rows);
+        txSleep(0);
+    }
+    txSleep(500);
+    while (!keyPress(VK_ESCAPE))
+    {
+        if (keyPress(VK_SPACE))
+        {
+            while (keyPress(VK_SPACE)) txSleep(0);
+            while (!keyPress(VK_SPACE))
+            {
+                if (keyPress(VK_RIGHT))
+                {
+                    while (keyPress(VK_RIGHT)) txSleep(0);
+                    makeStep(gameArr, cols, rows);
+                }
+                if (keyPress(VK_LBUTTON) || keyPress(VK_RBUTTON)) edit(gameArr, cols, rows);
+            }
+            while (keyPress(VK_SPACE)) txSleep(0);
+        }
+        play(gameArr, cols, rows);
+    }
 
     return 0;
 }
